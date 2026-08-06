@@ -404,8 +404,7 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
     };
 
     for block in blocks.iter_mut() {
-        let block_type = block.get("type").and_then(|t| t.as_str());
-        if is_image_block_type(block_type) {
+        if is_image_block_type(block.get("type").and_then(|t| t.as_str())) {
             *block = Value::Object({
                 let mut obj = serde_json::Map::new();
                     obj.insert("type".to_string(), Value::String("text".to_string()));
@@ -415,15 +414,13 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
             continue;
         }
 
-        let block_type = block.get("type").and_then(|t| t.as_str());
-
         // Recurse into nested content
         if let Some(nested) = block.get_mut("content") {
             replace_images_in_content(nested, text);
         }
 
         // Handle tool_result content
-        if block_type == Some("tool_result") || block_type == Some("tool_use") {
+        if matches!(block.get("type").and_then(|t| t.as_str()), Some("tool_result") | Some("tool_use")) {
             if let Some(nested) = block.get_mut("input") {
                 replace_images_in_value(nested, text);
             }
