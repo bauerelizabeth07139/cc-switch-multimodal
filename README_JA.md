@@ -353,7 +353,7 @@ CC_SWITCH_GDK_BACKEND=wayland ./CC-Switch-*.AppImage
 
 ### Windows ユーザー
 
-[Releases](../../releases) ページから最新版の `CC-Switch-v{version}-Windows.msi` インストーラー、またはポータブル版 `CC-Switch-v{version}-Windows-Portable.zip` をダウンロード。
+[Releases](../../releases) ページから最新版の `CC-Switch-v{version}-Windows.exe` インストーラー、またはポータブル版 `CC-Switch-v{version}-Windows-Portable.zip` をダウンロード。
 
 ### macOS ユーザー
 

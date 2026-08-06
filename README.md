@@ -353,7 +353,7 @@ For detailed guides on every feature, check out the **[User Manual](docs/user-ma
 
 ### Windows Users
 
-Download the latest `CC-Switch-v{version}-Windows.msi` installer or `CC-Switch-v{version}-Windows-Portable.zip` portable version from the [Releases](../../releases) page.
+Download the latest `CC-Switch-v{version}-Windows.exe` installer or `CC-Switch-v{version}-Windows-Portable.zip` portable version from the [Releases](../../releases) page.
 
 ### macOS Users
 

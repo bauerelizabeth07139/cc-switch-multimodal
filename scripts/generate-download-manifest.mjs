@@ -32,7 +32,7 @@ const RULES = [
   { suffix: '-Windows-arm64-Portable.zip', platform: 'windows', kind: 'portable', arch: 'arm64' },
   { suffix: '-Windows-Portable.zip', platform: 'windows', kind: 'portable', arch: 'x64' },
   { suffix: '-Windows-arm64.msi', platform: 'windows', kind: 'msi', arch: 'arm64' },
-  { suffix: '-Windows.msi', platform: 'windows', kind: 'msi', arch: 'x64' },
+  { suffix: '-Windows.exe', platform: 'windows', kind: 'exe', arch: 'x64' },
   { suffix: '-Linux-arm64.AppImage', platform: 'linux', kind: 'appimage', arch: 'arm64' },
   { suffix: '-Linux-x86_64.AppImage', platform: 'linux', kind: 'appimage', arch: 'x64' },
   { suffix: '-Linux-arm64.deb', platform: 'linux', kind: 'deb', arch: 'arm64' },

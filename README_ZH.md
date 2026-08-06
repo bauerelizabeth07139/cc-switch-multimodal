@@ -356,7 +356,7 @@ CC_SWITCH_GDK_BACKEND=wayland ./CC-Switch-*.AppImage
 
 ### Windows 用户
 
-从 [Releases](../../releases) 页面下载最新版本的 `CC-Switch-v{版本号}-Windows.msi` 安装包或 `CC-Switch-v{版本号}-Windows-Portable.zip` 绿色版。
+从 [Releases](../../releases) 页面下载最新版本的 `CC-Switch-v{版本号}-Windows.exe` 安装包或 `CC-Switch-v{版本号}-Windows-Portable.zip` 绿色版。
 
 ### macOS 用户
 

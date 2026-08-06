@@ -353,7 +353,7 @@ Ausführliche Anleitungen zu jeder Funktion finden Sie im **[Benutzerhandbuch](d
 
 ### Windows-Nutzer
 
-Laden Sie das neueste Installationsprogramm `CC-Switch-v{version}-Windows.msi` oder die portable Version `CC-Switch-v{version}-Windows-Portable.zip` von der Seite [Releases](../../releases) herunter.
+Laden Sie das neueste Installationsprogramm `CC-Switch-v{version}-Windows.exe` oder die portable Version `CC-Switch-v{version}-Windows-Portable.zip` von der Seite [Releases](../../releases) herunter.
 
 ### macOS-Nutzer
 
