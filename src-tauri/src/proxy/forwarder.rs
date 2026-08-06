@@ -181,7 +181,7 @@ impl RequestForwarder {
 
         let capability = image_input_capability_from_settings(
             &provider.settings_config,
-            model,
+            &model,
             true, // use_confirmed_registry
         );
 
@@ -478,7 +478,8 @@ impl RequestForwarder {
             let request_model = body
                 .get("model")
                 .and_then(|v| v.as_str())
-                .unwrap_or("");
+                .unwrap_or("")
+                .to_string();
 
             if let Some(binding) = self
                 .multimodal_config

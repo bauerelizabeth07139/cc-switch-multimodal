@@ -267,7 +267,7 @@ pub async fn execute_eyes_inference(
         .await
         .map_err(|e| ProxyError::ForwardFailed(format!("Failed to read eyes response: {e}")))?;
 
-    if !status.is_success() {
+    if !(200..300).contains(&status) {
         return Err(ProxyError::UpstreamError {
             status,
             body: Some(response_body),
@@ -404,7 +404,7 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
     };
 
     for block in blocks.iter_mut() {
-        let block_type = block.get("type").and_then(|t| t.as_str()).map(str::to_string);
+        let block_type = block.get("type").and_then(|t| t.as_str());
         if is_image_block_type(block_type) {
             *block = Value::Object({
                 let mut obj = serde_json::Map::new();
@@ -414,6 +414,8 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
             });
             continue;
         }
+
+        let block_type = block.get("type").and_then(|t| t.as_str());
 
         // Recurse into nested content
         if let Some(nested) = block.get_mut("content") {

@@ -224,7 +224,7 @@ fn replace_images_in_content_with_text_type(content: &mut Value, text_type: &str
     replaced
 }
 
-fn messages_have_image_blocks(body: &Value) -> bool {
+pub(crate) fn messages_have_image_blocks(body: &Value) -> bool {
     body.get("messages")
         .and_then(Value::as_array)
         .is_some_and(|messages| {
@@ -239,7 +239,7 @@ fn messages_have_image_blocks(body: &Value) -> bool {
         })
 }
 
-fn gemini_contents_have_image_blocks(body: &Value) -> bool {
+pub(crate) fn gemini_contents_have_image_blocks(body: &Value) -> bool {
     body.get("contents")
         .and_then(Value::as_array)
         .is_some_and(|contents| {
@@ -332,7 +332,7 @@ fn replace_images_in_gemini_part(part: &mut Value) -> usize {
     replaced
 }
 
-fn responses_input_has_image_blocks(input: Option<&Value>) -> bool {
+pub(crate) fn responses_input_has_image_blocks(input: Option<&Value>) -> bool {
     match input {
         Some(Value::Array(items)) => items.iter().any(responses_input_item_has_image_blocks),
         Some(item @ Value::Object(_)) => responses_input_item_has_image_blocks(item),
