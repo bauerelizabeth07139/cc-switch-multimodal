@@ -172,7 +172,8 @@ impl RequestForwarder {
             .get("model")
             .and_then(Value::as_str)
             .map(str::trim)
-            .unwrap_or("");
+            .unwrap_or("")
+            .to_string();
 
         if model.is_empty() {
             return false;

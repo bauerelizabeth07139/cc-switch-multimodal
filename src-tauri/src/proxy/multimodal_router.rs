@@ -404,7 +404,7 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
     };
 
     for block in blocks.iter_mut() {
-        let block_type = block.get("type").and_then(|t| t.as_str());
+        let block_type = block.get("type").and_then(|t| t.as_str()).map(str::to_string);
         if is_image_block_type(block_type) {
             *block = Value::Object({
                 let mut obj = serde_json::Map::new();
