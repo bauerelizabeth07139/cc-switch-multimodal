@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FullScreenPanel } from "@/components/common/FullScreenPanel";
 import type { Provider, CustomEndpoint, UniversalProvider } from "@/types";
 import type { AppId } from "@/lib/api";
-import { universalProvidersApi } from "@/lib/api";
+import { providersApi, universalProvidersApi, settingsApi } from "@/lib/api";
 import {
   ProviderForm,
   type ProviderFormValues,
@@ -313,10 +313,45 @@ export function AddProviderDialog({
         providerData.suggestedDefaults = values.suggestedDefaults;
       }
 
+      const beforeCount = Object.keys(
+        await providersApi.getAll(appId),
+      ).length;
       await onSubmit(providerData);
+
+      const binding = values.multimodalBinding;
+      if (binding?.enabled && binding.name.trim() && binding.counterpartModel.trim() && binding.counterpartProviderId) {
+        try {
+          const afterProviders = await providersApi.getAll(appId);
+          const afterKeys = Object.keys(afterProviders);
+          const newProviderId = afterKeys[beforeCount] || afterKeys[afterKeys.length - 1];
+          if (newProviderId) {
+            const isEyes = binding.role === "eyes";
+            await settingsApi.addCompositeModel({
+              name: binding.name.trim(),
+              eyes_model: isEyes ? binding.counterpartModel.trim() : "",
+              eyes_provider_id: isEyes ? binding.counterpartProviderId : newProviderId,
+              brain_model: isEyes ? "" : binding.counterpartModel.trim(),
+              brain_provider_id: isEyes ? newProviderId : binding.counterpartProviderId,
+            });
+            toast.success(
+              t("providerAdvanced.multimodalBinding.created", {
+                defaultValue: "复合模型绑定已创建",
+              }),
+            );
+          }
+        } catch (e) {
+          console.error("Failed to create composite model binding:", e);
+          toast.error(
+            t("providerAdvanced.multimodalBinding.createFailed", {
+              defaultValue: "创建复合模型绑定失败",
+            }),
+          );
+        }
+      }
+
       onOpenChange(false);
     },
-    [appId, onSubmit, onOpenChange],
+    [appId, onSubmit, onOpenChange, t],
   );
 
   const footer =

@@ -16,6 +16,14 @@
 
 English | [中文](README_ZH.md) | [日本語](README_JA.md) | [Deutsch](README_DE.md) | [Changelog](CHANGELOG.md)
 
+> **This is a modified fork of CC Switch with added multimodal capabilities:**
+> - 🖼️ **Multimodal Auto-Routing** — Image/video/audio inputs automatically route to multimodal models when the selected model is text-only (seamless switching, same or different URL/key).
+> - 👁️ **Composite Model Binding** — Bind a multimodal model (eyes) with a single-modal LLM (brain) as one named composite model.
+> - 📚 **Model Capabilities Dictionary** — 378+ models with modalities / reasoning / thinking-effort / context, name-matched regardless of URL.
+> - ⚙️ **New UI** — Settings > Routing > Multimodal Routing sub-tab; Add New Provider > Advanced options (Model Capabilities + composite binding).
+>
+> 中文：这是 CC Switch 的改版，新增多模态能力：多模态自动路由（图片/视频/音频自动路由到多模态模型）、组合模型绑定（多模态模型作为眼睛，单模态 LLM 作为大脑）、内置模型能力字典（378+ 模型，同名即同一模型）、以及新的多模态路由子选项卡与供应商高级选项。
+
 </div>
 
 ## ❤️Sponsor
@@ -208,6 +216,7 @@ Modern AI-powered coding relies on tools like Claude Code, Claude Desktop, Codex
 - **Cloud Sync** — Sync provider data across devices via Dropbox, OneDrive, iCloud, or WebDAV servers
 - **Cross-Platform** — Native desktop app for Windows, macOS, and Linux, built with Tauri 2
 - **Built-in Utilities** — Includes various utilities for first-launch login confirmation, signature bypass, plugin extension sync, and more
+- **Multimodal & Composite Models** — Auto-route image/video/audio to multimodal models and bind a vision model as the "eyes" of a text LLM
 
 ## Screenshots
 
@@ -229,6 +238,13 @@ Modern AI-powered coding relies on tools like Claude Code, Claude Desktop, Codex
 
 - **Local proxy with hot-switching** — Format conversion, auto-failover, circuit breaker, provider health monitoring, and request rectifier
 - **App-level takeover** — Independently proxy Claude, Codex, Gemini, or Grok Build, down to individual providers
+
+### Multimodal Routing & Composite Binding
+
+- **Multimodal auto-routing** — When a request carries image/video/audio input and the currently selected model is text-only, the local proxy automatically routes to a multimodal model (seamless switching, can use the same URL/key or a different URL). Driven by a comprehensive model capabilities dictionary (name → modalities, reasoning, thinking effort levels, context window); the same model name is treated as the same model regardless of URL.
+- **Composite model binding (multimodal as "eyes")** — Bind a multimodal model (eyes) with a single-modal LLM (brain) into one logical composite model you name. The eyes model describes the media, then the brain model reasons over the description.
+- **Model capabilities dictionary** — 378+ models built in (`src/config/modelCapabilities.ts` frontend + `src-tauri/src/model_catalog.rs` backend) covering modalities, reasoning, thinking effort levels, and context window.
+- **Where to configure** — Create composite bindings in Add New Provider > Advanced options, or in Settings > Routing > Multimodal Routing (enable switch, fallback model/provider, and composite binding management).
 
 ### MCP, Prompts & Skills
 
@@ -521,7 +537,7 @@ pnpm test:unit --coverage
 
 ### Tech Stack
 
-**Frontend**: React 18 · TypeScript · Vite · TailwindCSS 3.4 · TanStack Query v5 · react-i18next · react-hook-form · zod · shadcn/ui · @dnd-kit
+**Frontend**: React 18 · TypeScript · Vite · TailwindCSS 3.4 · TanStack Query v5 · react-i18next · react-hook-form · zod · shadcn/ui · @dnd-kit · model capabilities dictionary (TS + Rust)
 
 **Backend**: Tauri 2.8 · Rust · serde · tokio · thiserror · tauri-plugin-updater/process/dialog/store/log
 

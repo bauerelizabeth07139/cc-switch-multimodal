@@ -1,5 +1,7 @@
 use serde_json::Value;
 
+use crate::model_catalog;
+
 /// Image-input capability shared by Codex catalog generation and proxy request
 /// rectification.
 ///
@@ -15,7 +17,7 @@ pub(crate) enum ImageInputCapability {
 }
 
 /// Resolve image-input capability from an explicit declaration first, then the
-/// confirmed text-only model registry when the caller enables registry lookup.
+/// confirmed text-only registry when the caller enables registry lookup.
 pub(crate) fn resolve_image_input_capability(
     model: &str,
     declared_support: Option<bool>,
@@ -27,7 +29,21 @@ pub(crate) fn resolve_image_input_capability(
         None if use_confirmed_registry && is_confirmed_text_only_model(model) => {
             ImageInputCapability::Unsupported
         }
+        None if use_confirmed_registry && dictionary_capability(model) == Some(true) => {
+            ImageInputCapability::Supported
+        }
         None => ImageInputCapability::Unknown,
+    }
+}
+
+/// Consult the comprehensive model capabilities dictionary for image support.
+/// `None` = the model is not in the dictionary; `Some(bool)` = declared.
+fn dictionary_capability(model: &str) -> Option<bool> {
+    match model_catalog::get_model_capability(model) {
+        Some(cap) => {
+            Some(cap.modalities.iter().any(|m| m.eq_ignore_ascii_case("image")))
+        }
+        None => None,
     }
 }
 

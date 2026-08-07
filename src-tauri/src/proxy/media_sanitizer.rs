@@ -48,6 +48,118 @@ pub fn contains_image_blocks(body: &Value) -> bool {
         || gemini_contents_have_image_blocks(body)
 }
 
+/// Detect any non-text media block (image/video/audio/file) in the request body.
+///
+/// Used by multimodal auto-routing: when the body carries any non-text media and
+/// the current model is text-only, route to a multimodal model instead.
+pub fn contains_media_blocks(body: &Value) -> bool {
+    messages_have_media_blocks(body)
+        || responses_input_has_media_blocks(body.get("input"))
+        || gemini_contents_have_media_blocks(body)
+}
+
+fn messages_have_media_blocks(body: &Value) -> bool {
+    body.get("messages")
+        .and_then(Value::as_array)
+        .is_some_and(|messages| messages.iter().any(message_has_media_blocks))
+}
+
+fn message_has_media_blocks(message: &Value) -> bool {
+    let Some(content) = message.get("content") else {
+        return false;
+    };
+    content_has_media_blocks(content)
+        || (message.get("role").and_then(Value::as_str) == Some("tool")
+            && tool_output_contains_media(content, ToolMediaScope::AllSupported))
+}
+
+fn content_has_media_blocks(content: &Value) -> bool {
+    let Some(blocks) = content.as_array() else {
+        return false;
+    };
+
+    blocks.iter().any(|block| {
+        is_media_block_type(block.get("type").and_then(Value::as_str))
+            || block.get("content").is_some_and(|nested| {
+                content_has_media_blocks(nested)
+                    || (block.get("type").and_then(Value::as_str) == Some("tool_result")
+                        && tool_output_contains_media(nested, ToolMediaScope::AllSupported))
+            })
+    })
+}
+
+fn responses_input_has_media_blocks(input: Option<&Value>) -> bool {
+    match input {
+        Some(Value::Array(items)) => items.iter().any(responses_input_item_has_media_blocks),
+        Some(item @ Value::Object(_)) => responses_input_item_has_media_blocks(item),
+        _ => false,
+    }
+}
+
+fn responses_input_item_has_media_blocks(item: &Value) -> bool {
+    if item.get("type").and_then(Value::as_str) == Some("input_image") {
+        return true;
+    }
+
+    item.get("content").is_some_and(content_has_media_blocks)
+        || item
+            .get("output")
+            .is_some_and(|output| tool_output_contains_media(output, ToolMediaScope::AllSupported))
+}
+
+fn gemini_contents_have_media_blocks(body: &Value) -> bool {
+    body.get("contents")
+        .and_then(Value::as_array)
+        .is_some_and(|contents| {
+            contents.iter().any(|content| {
+                content
+                    .get("parts")
+                    .and_then(Value::as_array)
+                    .is_some_and(|parts| parts.iter().any(gemini_part_has_media))
+            })
+        })
+}
+
+fn gemini_part_has_media(part: &Value) -> bool {
+    gemini_media_payload_has_media(part.get("inlineData").or_else(|| part.get("inline_data")))
+        || gemini_media_payload_has_media(part.get("fileData").or_else(|| part.get("file_data")))
+        || part
+            .get("functionResponse")
+            .or_else(|| part.get("function_response"))
+            .and_then(|response| response.get("parts"))
+            .and_then(Value::as_array)
+            .is_some_and(|parts| parts.iter().any(gemini_part_has_media))
+}
+
+fn gemini_media_payload_has_media(payload: Option<&Value>) -> bool {
+    payload
+        .and_then(|payload| payload.get("mimeType").or_else(|| payload.get("mime_type")))
+        .and_then(Value::as_str)
+        .is_some_and(|mime_type| {
+            mime_type.starts_with("image/")
+                || mime_type.starts_with("video/")
+                || mime_type.starts_with("audio/")
+        })
+}
+
+fn is_media_block_type(block_type: Option<&str>) -> bool {
+    matches!(
+        block_type,
+        Some(
+            "image"
+                | "image_url"
+                | "input_image"
+                | "input_video"
+                | "video"
+                | "input_audio"
+                | "audio"
+                | "input_file"
+                | "file"
+                | "attachment"
+        )
+    )
+}
+
 pub fn replace_image_blocks_with_marker(body: &mut Value) -> usize {
     replace_images_in_body(body)
 }
@@ -224,7 +336,7 @@ fn replace_images_in_content_with_text_type(content: &mut Value, text_type: &str
     replaced
 }
 
-fn messages_have_image_blocks(body: &Value) -> bool {
+pub(crate) fn messages_have_image_blocks(body: &Value) -> bool {
     body.get("messages")
         .and_then(Value::as_array)
         .is_some_and(|messages| {
@@ -239,7 +351,7 @@ fn messages_have_image_blocks(body: &Value) -> bool {
         })
 }
 
-fn gemini_contents_have_image_blocks(body: &Value) -> bool {
+pub(crate) fn gemini_contents_have_image_blocks(body: &Value) -> bool {
     body.get("contents")
         .and_then(Value::as_array)
         .is_some_and(|contents| {
@@ -332,7 +444,7 @@ fn replace_images_in_gemini_part(part: &mut Value) -> usize {
     replaced
 }
 
-fn responses_input_has_image_blocks(input: Option<&Value>) -> bool {
+pub(crate) fn responses_input_has_image_blocks(input: Option<&Value>) -> bool {
     match input {
         Some(Value::Array(items)) => items.iter().any(responses_input_item_has_image_blocks),
         Some(item @ Value::Object(_)) => responses_input_item_has_image_blocks(item),

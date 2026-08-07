@@ -426,6 +426,38 @@
           "debug": "SSE ストリームとリクエスト/レスポンスを含む詳細情報",
           "trace": "すべてのログ、最も詳細"
         }
+      },
+      "multimodal": {
+        "title": "マルチモーダルルーティング",
+        "description": "マルチモーダル入力の自動ルーティングと複合モデルバインディングを設定します",
+        "enabled": "マルチモーダル自動ルーティングを有効化",
+        "enabledDescription": "マルチモーダルリクエストを視覚・推論をサポートするモデルに自動ルーティングします",
+        "fallbackModel": "フォールバックモデル名",
+        "fallbackModelPlaceholder": "例: gpt-4o",
+        "fallbackProvider": "フォールバックプロバイダー",
+        "selectProvider": "プロバイダーを選択",
+        "saveSuccess": "マルチモーダルルーティング設定を保存しました",
+        "saveFailed": "マルチモーダル設定の保存に失敗しました",
+        "loadFailed": "マルチモーダル設定の読み込みに失敗しました",
+        "fillRequired": "必須フィールドをすべて入力してください",
+        "bindingAdded": "複合モデルバインディングを追加しました",
+        "addBindingFailed": "バインディングの追加に失敗しました",
+        "bindingRemoved": "バインディングを削除しました",
+        "removeBindingFailed": "バインディングの削除に失敗しました",
+        "compositeBindings": {
+          "title": "複合モデルバインディング",
+          "description": "視覚モデル（eyes）と推論モデル（brain）を1つの論理モデルとしてバインドします",
+          "summary": "Eyes: {{eyesModel}} @ {{eyesProvider}} | Brain: {{brainModel}} @ {{brainProvider}}",
+          "add": "バインディングを追加",
+          "name": "名前",
+          "namePlaceholder": "例: vision-reasoning",
+          "eyesModel": "Eyes モデル",
+          "eyesProvider": "Eyes プロバイダー",
+          "brainModel": "Brain モデル",
+          "brainProvider": "Brain プロバイダー",
+          "selectProvider": "プロバイダーを選択",
+          "modelPlaceholder": "例: gpt-4o"
+        }
       }
     },
     "language": "言語",
@@ -1298,7 +1330,41 @@
     "pricingModelSourceInherit": "グローバル設定を継承",
     "pricingModelSourceRequest": "リクエストモデル",
     "pricingModelSourceResponse": "レスポンスモデル",
-    "pricingModelSourceHint": "リクエストモデルまたはレスポンスモデルで価格を照合するかを選択"
+    "pricingModelSourceHint": "リクエストモデルまたはレスポンスモデルで価格を照合するかを選択",
+    "multimodalBinding": {
+      "title": "マルチモーダルモデルバインディング",
+      "enable": "有効化",
+      "description": "このプロバイダーのモデルを別のモデルと複合モデルとしてバインドし、マルチモーダルモデルを目（eyes）、単一モーダルモデルを脳（brain）とします。",
+      "name": "複合モデル名",
+      "namePlaceholder": "例: my-vision-reasoning",
+      "role": "現在のプロバイダーの役割",
+      "roleEyes": "目（マルチモーダル）",
+      "roleBrain": "脳（推論）",
+      "eyesModel": "目のモデル名",
+      "eyesProvider": "目のプロバイダー",
+      "brainModel": "脳のモデル名",
+      "brainProvider": "脳のプロバイダー",
+      "selectProvider": "プロバイダーを選択",
+      "modelPlaceholder": "例: gpt-4o",
+      "save": "バインディングを保存",
+      "created": "複合モデルバインディングを作成しました",
+      "createFailed": "複合モデルバインディングの作成に失敗しました"
+    },
+    "modelCapabilities": {
+      "title": "モデル能力設定",
+      "description": "モデル名を入力すると、内蔵の能力辞書からマルチモーダルかどうか・推論モデルかどうか・サポートされる思考努力レベル・コンテキスト上限を自動検出します。手動で上書きもできます。",
+      "modelName": "モデル名",
+      "detected": "辞書の検出結果",
+      "multimodal": "マルチモーダルモデル",
+      "textOnly": "テキストのみモデル",
+      "reasoning": "推論モデル",
+      "context": "コンテキスト上限",
+      "effortLevels": "思考努力レベル",
+      "isReasoning": "推論モデル",
+      "effort": "思考努力",
+      "effortInherit": "辞書のデフォルトを継承",
+      "contextLimit": "コンテキスト上限 (tokens)"
+    }
   },
   "codexConfig": {
     "authJson": "auth.json (JSON) *",

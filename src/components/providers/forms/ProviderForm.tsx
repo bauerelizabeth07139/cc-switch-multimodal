@@ -84,6 +84,7 @@ import { OmoFormFields } from "./OmoFormFields";
 import { parseOmoOtherFieldsObject } from "@/types/omo";
 import {
   ProviderAdvancedConfig,
+  type MultimodalBindingConfig,
   type PricingModelSourceOption,
 } from "./ProviderAdvancedConfig";
 import {
@@ -332,6 +333,26 @@ function ProviderFormFull({
     ),
   }));
 
+  const { data: appProviders = {} } = useQuery({
+    queryKey: ["providers", appId],
+    queryFn: () => providersApi.getAll(appId),
+  });
+
+  const [multimodalBinding, setMultimodalBinding] =
+    useState<MultimodalBindingConfig | null>(null);
+
+  const [modelCapabilities, setModelCapabilities] = useState<{
+    modelName: string;
+    reasoning?: boolean;
+    thinkingEffort?: string;
+    contextLimit?: number;
+  }>(() => ({
+    modelName: "",
+    reasoning: undefined,
+    thinkingEffort: undefined,
+    contextLimit: undefined,
+  }));
+
   const { category } = useProviderCategory({
     appId,
     selectedPresetId,
@@ -365,6 +386,14 @@ function ProviderFormFull({
     setCodexChatReasoning(initialData?.meta?.codexChatReasoning ?? {});
     setPromptCacheRouting(initialData?.meta?.promptCacheRouting ?? "auto");
     setCustomUserAgent(initialData?.meta?.customUserAgent ?? "");
+    setModelCapabilities(
+      initialData?.meta?.modelCapabilities ?? {
+        modelName: "",
+        reasoning: undefined,
+        thinkingEffort: undefined,
+        contextLimit: undefined,
+      },
+    );
     setLocalProxyHeadersOverride(
       formatRequestOverrideObject(
         initialData?.meta?.localProxyRequestOverrides?.headers,
@@ -407,6 +436,12 @@ function ProviderFormFull({
     mode: "onSubmit",
   });
   const { isSubmitting } = form.formState;
+
+  useEffect(() => {
+    if (multimodalBinding) {
+      form.setValue("multimodalBinding" as any, multimodalBinding as any);
+    }
+  }, [multimodalBinding, form]);
 
   const handleSettingsConfigChange = useCallback(
     (config: string) => {
@@ -1654,6 +1689,15 @@ function ProviderFormFull({
         localIsFullUrl
           ? true
           : undefined,
+      modelCapabilities:
+        modelCapabilities.modelName.trim() !== ""
+          ? {
+              modelName: modelCapabilities.modelName.trim(),
+              reasoning: modelCapabilities.reasoning,
+              thinkingEffort: modelCapabilities.thinkingEffort,
+              contextLimit: modelCapabilities.contextLimit,
+            }
+          : undefined,
     };
 
     if (!isCodexOauthProvider && "codexFastMode" in nextMeta) {
@@ -2602,6 +2646,12 @@ function ProviderFormFull({
               <ProviderAdvancedConfig
                 pricingConfig={pricingConfig}
                 onPricingConfigChange={setPricingConfig}
+                multimodalBinding={multimodalBinding ?? undefined}
+                onMultimodalBindingChange={setMultimodalBinding}
+                allProviders={appProviders}
+                currentProviderId={providerId}
+                modelCapabilities={modelCapabilities}
+                onModelCapabilitiesChange={setModelCapabilities}
               />
             )}
 
@@ -2690,4 +2740,5 @@ export type ProviderFormValues = ProviderFormData & {
   meta?: ProviderMeta;
   providerKey?: string; // OpenCode/OpenClaw: user-defined provider key
   suggestedDefaults?: OpenClawSuggestedDefaults; // OpenClaw: suggested default model configuration
+  multimodalBinding?: MultimodalBindingConfig;
 };

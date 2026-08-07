@@ -5,7 +5,7 @@ export { backupsApi } from "./settings";
 export type {
   CompositeModelBinding,
   MultimodalRoutingConfig,
-} from "./settings";
+} from "@/types";
 export { mcpApi } from "./mcp";
 export { profilesApi } from "./profiles";
 export { promptsApi } from "./prompts";

@@ -325,6 +325,17 @@ export const settingsApi = {
   async removeCompositeModel(name: string): Promise<boolean> {
     return await invoke("remove_composite_model", { name });
   },
+
+  async getModelCapabilities(): Promise<
+    Record<string, {
+      modalities: string[];
+      reasoning: boolean;
+      thinkingEffort: string[] | null;
+      context: number;
+    }>
+  > {
+    return await invoke("get_model_capabilities");
+  },
 };
 
 /** 单处工具安装的诊断信息（多处安装冲突检测）。字段对应后端 ToolInstallation。 */

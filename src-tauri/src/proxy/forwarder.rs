@@ -152,10 +152,10 @@ pub struct RequestForwarder {
 }
 
 impl RequestForwarder {
-    /// 多模态自动路由：当请求包含图片且当前模型为纯文本时，自动切换到多模态模型
+    /// 多模态自动路由：当请求包含图片/视频/音频且当前模型为纯文本时，自动切换到多模态模型
     ///
-    /// 如果启用了多模态自动路由，且请求包含图片，且当前模型不支持图片输入，
-    /// 则将模型切换到配置的多模态回退模型，避免图片被降级 stripping。
+    /// 如果启用了多模态自动路由，且请求包含非文本媒体，且当前模型不支持这些模态，
+    /// 则将模型切换到配置的多模态回退模型，避免媒体被降级 stripping。
     /// 返回 true 表示已执行自动路由。
     fn apply_multimodal_auto_route(&self, body: &mut Value, provider: &Provider) -> bool {
         use crate::model_capabilities::{image_input_capability_from_settings, ImageInputCapability};
@@ -164,7 +164,7 @@ impl RequestForwarder {
             return false;
         }
 
-        if !super::media_sanitizer::contains_image_blocks(body) {
+        if !super::media_sanitizer::contains_media_blocks(body) {
             return false;
         }
 
@@ -172,7 +172,8 @@ impl RequestForwarder {
             .get("model")
             .and_then(Value::as_str)
             .map(str::trim)
-            .unwrap_or("");
+            .unwrap_or("")
+            .to_string();
 
         if model.is_empty() {
             return false;
@@ -180,7 +181,7 @@ impl RequestForwarder {
 
         let capability = image_input_capability_from_settings(
             &provider.settings_config,
-            model,
+            &model,
             true, // use_confirmed_registry
         );
 
@@ -477,7 +478,8 @@ impl RequestForwarder {
             let request_model = body
                 .get("model")
                 .and_then(|v| v.as_str())
-                .unwrap_or("");
+                .unwrap_or("")
+                .to_string();
 
             if let Some(binding) = self
                 .multimodal_config
@@ -3802,6 +3804,7 @@ mod tests {
             rectifier_config: RectifierConfig::default(),
             optimizer_config: OptimizerConfig::default(),
             copilot_optimizer_config: CopilotOptimizerConfig::default(),
+            multimodal_config: MultimodalRoutingConfig::default(),
             non_streaming_timeout,
             streaming_first_byte_timeout,
             max_attempts: 1,

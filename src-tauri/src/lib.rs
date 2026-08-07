@@ -22,6 +22,7 @@ mod lightweight;
 mod linux_fix;
 mod mcp;
 mod model_capabilities;
+mod model_catalog;
 mod openclaw_config;
 mod opencode_config;
 mod panic_hook;
@@ -1365,6 +1366,7 @@ pub fn run() {
             commands::list_composite_models,
             commands::add_composite_model,
             commands::remove_composite_model,
+            commands::get_model_capabilities,
             commands::get_log_config,
             commands::set_log_config,
             commands::restart_app,

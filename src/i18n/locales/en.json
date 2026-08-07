@@ -426,6 +426,38 @@
           "debug": "Detailed info including SSE stream and request/response",
           "trace": "All logs, most verbose"
         }
+      },
+      "multimodal": {
+        "title": "Multimodal Routing",
+        "description": "Configure automatic routing of multimodal inputs and composite model bindings",
+        "enabled": "Enable multimodal auto-routing",
+        "enabledDescription": "Automatically route multimodal requests to models that support vision and reasoning",
+        "fallbackModel": "Fallback model name",
+        "fallbackModelPlaceholder": "e.g. gpt-4o",
+        "fallbackProvider": "Fallback provider",
+        "selectProvider": "Select provider",
+        "saveSuccess": "Multimodal routing config saved",
+        "saveFailed": "Failed to save multimodal config",
+        "loadFailed": "Failed to load multimodal config",
+        "fillRequired": "Please fill in all required fields",
+        "bindingAdded": "Composite model binding added",
+        "addBindingFailed": "Failed to add binding",
+        "bindingRemoved": "Binding removed",
+        "removeBindingFailed": "Failed to remove binding",
+        "compositeBindings": {
+          "title": "Composite Model Bindings",
+          "description": "Bind a vision model (eyes) with a reasoning model (brain) as one logical model",
+          "summary": "Eyes: {{eyesModel}} @ {{eyesProvider}} | Brain: {{brainModel}} @ {{brainProvider}}",
+          "add": "Add binding",
+          "name": "Name",
+          "namePlaceholder": "e.g. vision-reasoning",
+          "eyesModel": "Eyes model",
+          "eyesProvider": "Eyes provider",
+          "brainModel": "Brain model",
+          "brainProvider": "Brain provider",
+          "selectProvider": "Select provider",
+          "modelPlaceholder": "e.g. gpt-4o"
+        }
       }
     },
     "language": "Language",
@@ -1298,7 +1330,41 @@
     "pricingModelSourceInherit": "Inherit global default",
     "pricingModelSourceRequest": "Request model",
     "pricingModelSourceResponse": "Response model",
-    "pricingModelSourceHint": "Choose whether to match pricing by request model or response model"
+    "pricingModelSourceHint": "Choose whether to match pricing by request model or response model",
+    "multimodalBinding": {
+      "title": "Multimodal Model Binding",
+      "enable": "Enable",
+      "description": "Bind this provider's model with another model as a composite model, making the multimodal model the eyes and the single-modal model the brain.",
+      "name": "Composite model name",
+      "namePlaceholder": "e.g. my-vision-reasoning",
+      "role": "Current provider role",
+      "roleEyes": "Eyes (multimodal)",
+      "roleBrain": "Brain (reasoning)",
+      "eyesModel": "Eyes model name",
+      "eyesProvider": "Eyes provider",
+      "brainModel": "Brain model name",
+      "brainProvider": "Brain provider",
+      "selectProvider": "Select provider",
+      "modelPlaceholder": "e.g. gpt-4o",
+      "save": "Save binding",
+      "created": "Composite model binding created",
+      "createFailed": "Failed to create composite model binding"
+    },
+    "modelCapabilities": {
+      "title": "Model Capabilities",
+      "description": "Enter a model name to auto-detect whether it is multimodal / reasoning, supported thinking effort levels and context limit from the built-in capability dictionary; you can override manually.",
+      "modelName": "Model name",
+      "detected": "Dictionary result",
+      "multimodal": "Multimodal model",
+      "textOnly": "Text-only model",
+      "reasoning": "Reasoning model",
+      "context": "Context limit",
+      "effortLevels": "Thinking effort levels",
+      "isReasoning": "Reasoning model",
+      "effort": "Thinking effort",
+      "effortInherit": "Inherit dictionary default",
+      "contextLimit": "Context limit (tokens)"
+    }
   },
   "codexConfig": {
     "authJson": "auth.json (JSON) *",

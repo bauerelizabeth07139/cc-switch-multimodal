@@ -426,6 +426,38 @@
           "debug": "詳細資訊，包含 SSE 串流與請求/回應詳情",
           "trace": "全部日誌，最詳細"
         }
+      },
+      "multimodal": {
+        "title": "多模態路由",
+        "description": "設定多模態輸入的自動路由與組合模型綁定",
+        "enabled": "啟用多模態自動路由",
+        "enabledDescription": "自動將多模態請求路由到支援視覺和推理的模型",
+        "fallbackModel": "回退模型名稱",
+        "fallbackModelPlaceholder": "例: gpt-4o",
+        "fallbackProvider": "回退供應商",
+        "selectProvider": "選擇供應商",
+        "saveSuccess": "多模態路由設定已儲存",
+        "saveFailed": "儲存多模態設定失敗",
+        "loadFailed": "載入多模態設定失敗",
+        "fillRequired": "請填寫所有必填欄位",
+        "bindingAdded": "組合模型綁定已新增",
+        "addBindingFailed": "新增綁定失敗",
+        "bindingRemoved": "綁定已刪除",
+        "removeBindingFailed": "刪除綁定失敗",
+        "compositeBindings": {
+          "title": "組合模型綁定",
+          "description": "將視覺模型（eyes）與推理模型（brain）綁定為同一邏輯模型",
+          "summary": "Eyes: {{eyesModel}} @ {{eyesProvider}} | Brain: {{brainModel}} @ {{brainProvider}}",
+          "add": "新增綁定",
+          "name": "名稱",
+          "namePlaceholder": "例: vision-reasoning",
+          "eyesModel": "Eyes 模型",
+          "eyesProvider": "Eyes 供應商",
+          "brainModel": "Brain 模型",
+          "brainProvider": "Brain 供應商",
+          "selectProvider": "選擇供應商",
+          "modelPlaceholder": "例: gpt-4o"
+        }
       }
     },
     "language": "介面語言",
@@ -1299,7 +1331,41 @@
     "pricingModelSourceInherit": "繼承全域預設",
     "pricingModelSourceRequest": "請求模型",
     "pricingModelSourceResponse": "回傳模型",
-    "pricingModelSourceHint": "選擇依請求模型還是回傳模型進行定價比對"
+    "pricingModelSourceHint": "選擇依請求模型還是回傳模型進行定價比對",
+    "multimodalBinding": {
+      "title": "多模態模型綁定",
+      "enable": "啟用",
+      "description": "將此供應商的模型與另一個模型綁定為複合模型，讓多模態模型作為眼睛，單模態模型作為大腦。",
+      "name": "複合模型名稱",
+      "namePlaceholder": "例: my-vision-reasoning",
+      "role": "目前供應商角色",
+      "roleEyes": "眼睛（多模態）",
+      "roleBrain": "大腦（推理）",
+      "eyesModel": "眼睛模型名稱",
+      "eyesProvider": "眼睛供應商",
+      "brainModel": "大腦模型名稱",
+      "brainProvider": "大腦供應商",
+      "selectProvider": "選擇供應商",
+      "modelPlaceholder": "例: gpt-4o",
+      "save": "儲存綁定",
+      "created": "複合模型綁定已建立",
+      "createFailed": "建立複合模型綁定失敗"
+    },
+    "modelCapabilities": {
+      "title": "模型能力設定",
+      "description": "輸入模型名稱後，根據內建能力字典自動識別是否為多模態、是否推理模型、支援的思考強度檔位與上下文上限；可手動覆蓋。",
+      "modelName": "模型名稱",
+      "detected": "字典識別結果",
+      "multimodal": "多模態模型",
+      "textOnly": "純文字模型",
+      "reasoning": "推理模型",
+      "context": "上下文上限",
+      "effortLevels": "思考強度檔位",
+      "isReasoning": "推理模型",
+      "effort": "思考強度檔位",
+      "effortInherit": "繼承字典預設",
+      "contextLimit": "上下文上限 (tokens)"
+    }
   },
   "codexConfig": {
     "authJson": "auth.json (JSON) *",

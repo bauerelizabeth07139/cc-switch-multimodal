@@ -231,6 +231,14 @@ export interface ProviderMeta {
   providerType?: string;
   // GitHub Copilot 关联账号 ID（旧字段，保留兼容读取）
   githubAccountId?: string;
+  // 模型能力覆盖（推理模型 / 思考强度档位 / 上下文上限）
+  // 由内置能力字典驱动，同名模型视为同一模型，与 URL/key 无关
+  modelCapabilities?: {
+    modelName: string;
+    reasoning?: boolean;
+    thinkingEffort?: string;
+    contextLimit?: number;
+  };
 }
 
 // Skill 同步方式

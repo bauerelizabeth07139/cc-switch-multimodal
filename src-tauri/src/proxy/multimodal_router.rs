@@ -1,38 +1,21 @@
 use crate::app_config::AppType;
+use crate::model_catalog;
 use crate::provider::Provider;
 use crate::proxy::error::ProxyError;
 use axum::http::HeaderMap;
 use serde_json::{json, Value};
 
-/// Known multimodal models mapped by lowercase tail pattern to supported modalities.
-static KNOWN_MULTIMODAL_MODELS: &[(&str, &[&str])] = &[
-    ("gpt-4o", &["text", "image"]),
-    ("gpt-4o-mini", &["text", "image"]),
-    ("gpt-4-turbo", &["text", "image"]),
-    ("claude-opus-4", &["text", "image"]),
-    ("claude-sonnet-4", &["text", "image"]),
-    ("claude-3.5-sonnet", &["text", "image"]),
-    ("claude-3.5-haiku", &["text", "image"]),
-    ("gemini-2.5-pro", &["text", "image", "audio", "video"]),
-    ("gemini-2.5-flash", &["text", "image", "audio", "video"]),
-    ("gemini-1.5-pro", &["text", "image", "audio", "video"]),
-    ("gemini-1.5-flash", &["text", "image", "audio", "video"]),
-    ("step-3.7-flash", &["text", "image", "audio", "video"]),
-];
-
 /// Check if a model name matches a known multimodal model.
 ///
-/// Uses case-insensitive substring matching on the model name tail (after the last `/`).
+/// Uses the comprehensive model capabilities dictionary keyed by normalized
+/// model name (same name = same model regardless of URL/provider).
 pub fn is_model_multimodal(model_name: &str) -> bool {
-    let normalized = model_name.to_lowercase();
-    let tail = normalized.rsplit('/').next().unwrap_or(&normalized);
+    model_catalog::is_model_multimodal(model_name)
+}
 
-    KNOWN_MULTIMODAL_MODELS
-        .iter()
-        .any(|(pattern, _)| {
-            let pattern_lower = pattern.to_lowercase();
-            tail == pattern_lower.as_str() || normalized.contains(pattern_lower.as_str())
-        })
+/// Check whether a model supports the given modality (image/audio/video/pdf...).
+pub fn model_supports_modality(model_name: &str, modality: &str) -> bool {
+    model_catalog::model_supports_modality(model_name, modality)
 }
 
 /// Check if a provider has any model in its catalog that supports images.
@@ -267,7 +250,7 @@ pub async fn execute_eyes_inference(
         .await
         .map_err(|e| ProxyError::ForwardFailed(format!("Failed to read eyes response: {e}")))?;
 
-    if !status.is_success() {
+    if !(200..300).contains(&status) {
         return Err(ProxyError::UpstreamError {
             status,
             body: Some(response_body),
@@ -404,8 +387,11 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
     };
 
     for block in blocks.iter_mut() {
-        let block_type = block.get("type").and_then(|t| t.as_str());
-        if is_image_block_type(block_type) {
+        let block_type = block
+            .get("type")
+            .and_then(|t| t.as_str())
+            .map(str::to_string);
+        if is_image_block_type(block_type.as_deref()) {
             *block = Value::Object({
                 let mut obj = serde_json::Map::new();
                     obj.insert("type".to_string(), Value::String("text".to_string()));
@@ -421,7 +407,9 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
         }
 
         // Handle tool_result content
-        if block_type == Some("tool_result") || block_type == Some("tool_use") {
+        if block_type.as_deref() == Some("tool_result")
+            || block_type.as_deref() == Some("tool_use")
+        {
             if let Some(nested) = block.get_mut("input") {
                 replace_images_in_value(nested, text);
             }
@@ -434,7 +422,7 @@ fn replace_images_in_content(content: &mut Value, text: &str) {
     }
 }
 
-/// Check if a block type is an image type.
+/// Check if a block type is a media type (image/video/audio).
 fn is_image_block_type(block_type: Option<&str>) -> bool {
     matches!(
         block_type,
@@ -444,22 +432,25 @@ fn is_image_block_type(block_type: Option<&str>) -> bool {
             | Some("vision")
             | Some("inline_data")
             | Some("file_data")
+            | Some("video")
+            | Some("input_video")
+            | Some("audio")
+            | Some("input_audio")
+            | Some("attachment")
     )
 }
 
-/// Check if a Gemini part contains an image.
+/// Check if a Gemini part contains an image/video/audio payload.
 fn is_image_part(part: &Value) -> bool {
     part.get("inlineData")
         .or_else(|| part.get("inline_data"))
+        .or_else(|| part.get("fileData"))
+        .or_else(|| part.get("file_data"))
         .and_then(|v| v.get("mimeType").or_else(|| v.get("mime_type")))
         .and_then(|v| v.as_str())
-        .is_some_and(|mime| mime.starts_with("image/"))
-        || part
-            .get("fileData")
-            .or_else(|| part.get("file_data"))
-            .and_then(|v| v.get("mimeType").or_else(|| v.get("mime_type")))
-            .and_then(|v| v.as_str())
-            .is_some_and(|mime| mime.starts_with("image/"))
+        .is_some_and(|mime| {
+            mime.starts_with("image/") || mime.starts_with("video/") || mime.starts_with("audio/")
+        })
 }
 
 #[cfg(test)]
@@ -485,8 +476,9 @@ mod tests {
 
         assert!(!is_model_multimodal("deepseek-chat"));
         assert!(!is_model_multimodal("gpt-4"));
-        assert!(!is_model_multimodal("claude-3-opus"));
+        assert!(is_model_multimodal("claude-3-opus"));
         assert!(!is_model_multimodal("step-3.5-flash"));
+        assert!(!is_model_multimodal("step-3.5-flash-2603"));
     }
 
     #[test]

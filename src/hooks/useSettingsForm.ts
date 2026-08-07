@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useSettingsQuery } from "@/lib/query";
 import type {
   Settings,
-  MultimodalRoutingConfig,
 } from "@/types";
 
 type Language = "zh" | "zh-TW" | "en" | "ja";

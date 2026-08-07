@@ -541,6 +541,27 @@ pub struct ProviderMeta {
     /// 用于多账号支持，关联到特定的 GitHub 账号
     #[serde(rename = "githubAccountId", skip_serializing_if = "Option::is_none")]
     pub github_account_id: Option<String>,
+    /// 模型能力覆盖（推理模型 / 思考强度档位 / 上下文上限）。
+    /// 由内置能力字典驱动；同名模型视为同一模型，与 URL/key 无关。
+    #[serde(rename = "modelCapabilities", skip_serializing_if = "Option::is_none")]
+    pub model_capabilities: Option<ModelCapabilitiesOverride>,
+}
+
+/// 模型能力覆盖配置（推理模型 / 思考强度档位 / 上下文上限）。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelCapabilitiesOverride {
+    /// 模型名称（规范化后用于字典查找；同名视为同一模型）
+    pub model_name: String,
+    /// 是否推理模型（None = 继承字典）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning: Option<bool>,
+    /// 思考强度档位（如 low / medium / high；None = 继承字典）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_effort: Option<String>,
+    /// 上下文上限 tokens（None = 继承字典）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_limit: Option<u64>,
 }
 
 /// 解析 Provider 级自定义 User-Agent 字符串（单一真理来源）。

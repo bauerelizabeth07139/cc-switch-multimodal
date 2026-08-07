@@ -770,6 +770,14 @@ pub async fn remove_composite_model(
     Ok(true)
 }
 
+/// 获取模型能力字典（name -> modalities / reasoning / thinkingEffort / context）。
+///
+/// 同一个模型名即为同一个模型，与供应商 URL / key 无关。
+#[tauri::command]
+pub fn get_model_capabilities() -> serde_json::Value {
+    crate::model_catalog::model_catalog_json()
+}
+
 /// 获取日志配置
 #[tauri::command]
 pub async fn get_log_config(
