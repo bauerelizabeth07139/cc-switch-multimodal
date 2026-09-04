@@ -19,6 +19,10 @@ GEMINI.md
 vitest-report.json
 nul
 
+# Rust build artifacts (src-tauri/ has its own .gitignore with /target/)
+target/
+*.rs.bk
+
 # Flatpak build artifacts
 flatpak/cc-switch.deb
 flatpak-build/

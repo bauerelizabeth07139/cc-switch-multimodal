@@ -204,6 +204,83 @@ impl RequestForwarder {
         true
     }
 
+    /// 多模态自动路由的回退供应商切换。
+    ///
+    /// `apply_multimodal_auto_route` 只改写模型名；当用户在设置中配置了
+    /// 「回退供应商」（`fallback_provider_id`，空 = 当前供应商）时，这里补上
+    /// 供应商切换这另一半：请求包含图片、当前模型被判定为纯文本、且回退
+    /// 供应商可解析时，把模型改写为回退模型（如果配置了）并返回回退供应商；
+    /// 否则返回 `None` 表示维持原供应商列表。
+    async fn try_multimodal_fallback_route(
+        &self,
+        body: &mut Value,
+        providers: &[Provider],
+        app_type_str: &str,
+    ) -> Option<Provider> {
+        if !self.multimodal_config.enabled {
+            return None;
+        }
+        let fallback_provider_id = self.multimodal_config.fallback_provider_id.trim();
+        if fallback_provider_id.is_empty() {
+            return None;
+        }
+        if !super::media_sanitizer::contains_image_blocks(body) {
+            return None;
+        }
+        let model = body
+            .get("model")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .unwrap_or("");
+        if model.is_empty() {
+            return None;
+        }
+        let is_text_only = providers.first().is_some_and(|p| {
+            use crate::model_capabilities::{
+                image_input_capability_from_settings, ImageInputCapability,
+            };
+            image_input_capability_from_settings(&p.settings_config, model, true)
+                == ImageInputCapability::Unsupported
+        });
+        if !is_text_only {
+            return None;
+        }
+
+        match self
+            .router
+            .get_provider_by_id(fallback_provider_id, app_type_str)
+            .await
+        {
+            Ok(Some(fallback)) => {
+                let fallback_model = self.multimodal_config.fallback_model.trim();
+                if !fallback_model.is_empty() {
+                    body["model"] = Value::String(fallback_model.to_string());
+                    log::info!(
+                        "[Multimodal] Auto-routed text-only model '{}' to multimodal model '{}' on fallback provider '{}'",
+                        model,
+                        fallback_model,
+                        fallback.id
+                    );
+                } else {
+                    log::info!(
+                        "[Multimodal] Auto-routed text-only model '{}' to fallback provider '{}'",
+                        model,
+                        fallback.id
+                    );
+                }
+                Some(fallback)
+            }
+            Ok(None) | Err(_) => {
+                log::warn!(
+                    "[Multimodal] Fallback provider '{}' not found for app type '{}', keeping current provider",
+                    fallback_provider_id,
+                    app_type_str
+                );
+                None
+            }
+        }
+    }
+
     /// 预防式 media 降级：发送前对 text-only 模型把图片块替换为标记。
     ///
     /// 受 `enabled && request_media_fallback` 管辖；其中"启发式模型名单预测"
@@ -568,6 +645,17 @@ impl RequestForwarder {
                     }
                 }
             }
+        }
+
+        // --- 多模态自动路由：回退供应商切换 ---
+        // apply_multimodal_auto_route 只改写模型名，这里补上「回退供应商」
+        // 配置（fallback_provider_id）的处理：请求含图片且当前模型为纯文本时，
+        // 把整个请求改发给回退供应商，而不是在纯文本供应商上直接换模型名。
+        if let Some(fallback) = self
+            .try_multimodal_fallback_route(&mut body, &providers, app_type_str)
+            .await
+        {
+            providers = vec![fallback];
         }
 
         let mut last_error = None;
@@ -5077,6 +5165,174 @@ mod tests {
             "显式 text-only 即使关闭 heuristic 也应预替换"
         );
         assert_eq!(declared_body["messages"][0]["content"][0]["type"], "text");
+    }
+
+    // ===== Multimodal auto-route fallback provider switching =====
+    // apply_multimodal_auto_route 只改写模型名；配置了 fallback_provider_id 时，
+    // try_multimodal_fallback_route 应把整个请求改发给回退供应商。
+
+    fn forwarder_with_multimodal(
+        db: Arc<Database>,
+        config: MultimodalRoutingConfig,
+    ) -> RequestForwarder {
+        let mut fwd = test_forwarder(Duration::from_secs(1), Duration::from_secs(1));
+        fwd.router = Arc::new(ProviderRouter::new(db));
+        fwd.multimodal_config = config;
+        fwd
+    }
+
+    fn multimodal_config(
+        fallback_provider_id: &str,
+        fallback_model: &str,
+    ) -> MultimodalRoutingConfig {
+        MultimodalRoutingConfig {
+            enabled: true,
+            fallback_model: fallback_model.to_string(),
+            fallback_provider_id: fallback_provider_id.to_string(),
+            composite_bindings: vec![],
+        }
+    }
+
+    fn gemini_fallback_provider() -> Provider {
+        Provider::with_id(
+            "gemini-fallback".to_string(),
+            "Gemini Fallback".to_string(),
+            json!({
+                "modelCatalog": {
+                    "models": [ { "model": "gemini-2.5-pro", "supportsImage": true } ]
+                }
+            }),
+            None,
+        )
+    }
+
+    #[tokio::test]
+    async fn fallback_route_switches_provider_and_rewrites_model() {
+        let db = Arc::new(Database::memory().expect("memory db"));
+        db.save_provider("claude", &gemini_fallback_provider())
+            .expect("save fallback provider");
+
+        let fwd = forwarder_with_multimodal(
+            db,
+            multimodal_config("gemini-fallback", "gemini-2.5-pro"),
+        );
+        let mut body = body_with_image("deepseek-v4-pro");
+        let providers = vec![provider_with_settings(json!({}))];
+
+        let switched = fwd
+            .try_multimodal_fallback_route(&mut body, &providers, "claude")
+            .await;
+
+        let switched = switched.expect("should switch to the fallback provider");
+        assert_eq!(switched.id, "gemini-fallback");
+        assert_eq!(
+            body["model"],
+            "gemini-2.5-pro",
+            "model should be rewritten to the configured fallback model"
+        );
+    }
+
+    #[tokio::test]
+    async fn fallback_route_keeps_model_when_no_fallback_model_configured() {
+        let db = Arc::new(Database::memory().expect("memory db"));
+        db.save_provider("claude", &gemini_fallback_provider())
+            .expect("save fallback provider");
+
+        let fwd = forwarder_with_multimodal(
+            db,
+            multimodal_config("gemini-fallback", ""),
+        );
+        let mut body = body_with_image("deepseek-v4-pro");
+        let providers = vec![provider_with_settings(json!({}))];
+
+        let switched = fwd
+            .try_multimodal_fallback_route(&mut body, &providers, "claude")
+            .await;
+
+        assert!(switched.is_some(), "provider switch should still happen");
+        assert_eq!(
+            body["model"],
+            "deepseek-v4-pro",
+            "model untouched when no fallback model is configured"
+        );
+    }
+
+    #[tokio::test]
+    async fn fallback_route_skipped_when_disabled_or_no_fallback_provider() {
+        let db = Arc::new(Database::memory().expect("memory db"));
+        let providers = vec![provider_with_settings(json!({}))];
+
+        // 开关关闭：不路由
+        let mut body = body_with_image("deepseek-v4-pro");
+        let disabled = forwarder_with_multimodal(
+            db.clone(),
+            MultimodalRoutingConfig {
+                enabled: false,
+                ..multimodal_config("gemini-fallback", "gemini-2.5-pro")
+            },
+        );
+        assert!(disabled
+            .try_multimodal_fallback_route(&mut body, &providers, "claude")
+            .await
+            .is_none());
+        assert_eq!(body["model"], "deepseek-v4-pro");
+
+        // 未配置回退供应商（空 id）：保持原行为
+        let no_fallback = forwarder_with_multimodal(db, multimodal_config("", "gemini-2.5-pro"));
+        assert!(no_fallback
+            .try_multimodal_fallback_route(&mut body, &providers, "claude")
+            .await
+            .is_none());
+        assert_eq!(body["model"], "deepseek-v4-pro");
+    }
+
+    #[tokio::test]
+    async fn fallback_route_skipped_without_images_or_for_multimodal_model() {
+        let db = Arc::new(Database::memory().expect("memory db"));
+        let fwd = forwarder_with_multimodal(
+            db,
+            multimodal_config("gemini-fallback", "gemini-2.5-pro"),
+        );
+        let providers = vec![provider_with_settings(json!({}))];
+
+        // 无图片：不路由
+        let mut text_body = json!({
+            "model": "deepseek-v4-pro",
+            "messages": [{ "role": "user", "content": "hello" }]
+        });
+        assert!(fwd
+            .try_multimodal_fallback_route(&mut text_body, &providers, "claude")
+            .await
+            .is_none());
+
+        // 模型本身已支持图片：不路由
+        let mut img_body = body_with_image("gpt-4o");
+        assert!(fwd
+            .try_multimodal_fallback_route(&mut img_body, &providers, "claude")
+            .await
+            .is_none());
+        assert_eq!(img_body["model"], "gpt-4o");
+    }
+
+    #[tokio::test]
+    async fn fallback_route_skipped_when_provider_not_found() {
+        let db = Arc::new(Database::memory().expect("memory db"));
+        let fwd = forwarder_with_multimodal(
+            db,
+            multimodal_config("missing-provider", "gemini-2.5-pro"),
+        );
+        let mut body = body_with_image("deepseek-v4-pro");
+        let providers = vec![provider_with_settings(json!({}))];
+
+        assert!(fwd
+            .try_multimodal_fallback_route(&mut body, &providers, "claude")
+            .await
+            .is_none());
+        assert_eq!(
+            body["model"],
+            "deepseek-v4-pro",
+            "model untouched when the fallback provider does not exist"
+        );
     }
 
     #[test]

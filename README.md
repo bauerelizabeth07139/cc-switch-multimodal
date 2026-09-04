@@ -230,6 +230,13 @@ Modern AI-powered coding relies on tools like Claude Code, Claude Desktop, Codex
 - **Local proxy with hot-switching** — Format conversion, auto-failover, circuit breaker, provider health monitoring, and request rectifier
 - **App-level takeover** — Independently proxy Claude, Codex, Gemini, or Grok Build, down to individual providers
 
+### Multimodal
+
+- **Multimodal auto-routing** — When a request carries image content and the current model is known to be text-only, the proxy automatically reroutes it to a multimodal model (and optionally a dedicated fallback provider) instead of stripping the images — no more 400s or `[Unsupported Image]` markers on vision-capable setups
+- **Composite model binding (eyes + brain)** — Bind a vision-capable "eyes" model and a text "brain" model into a single logical model name: image input is first described by the eyes model, then the request is forwarded to the brain model for reasoning. Works with Claude Code / Claude Desktop and Codex / Grok Build through the local proxy
+- **Known multimodal model registry** — Built-in recognition for GPT-4o, Claude 3.5/4, Gemini 2.5/1.5, and Step 3.7 Flash family models, plus per-provider model catalog declarations (`supportsImage` / `inputModalities`)
+- **Configured in Settings → Advanced → Multimodal** — Enable auto-routing, pick the fallback model and provider, and manage composite bindings (eye/brain models and their providers)
+
 ### MCP, Prompts & Skills
 
 - **Unified MCP panel** — Manage MCP servers across Claude, Codex, Gemini, Grok Build, OpenCode, and Hermes with bidirectional sync and Deep Link import
@@ -257,6 +264,18 @@ Modern AI-powered coding relies on tools like Claude Code, Claude Desktop, Codex
 <summary><strong>Which AI tools does CC Switch support?</strong></summary>
 
 CC Switch supports eight tools: **Claude Code**, **Claude Desktop**, **Codex**, **Gemini CLI**, **Grok Build**, **OpenCode**, **OpenClaw**, and **Hermes**. Each tool has dedicated provider presets and configuration management.
+
+</details>
+
+<details>
+<summary><strong>How do multimodal auto-routing and composite models work?</strong></summary>
+
+Both features run inside the local proxy mode:
+
+- **Multimodal auto-routing**: when a request contains image content but the current model is known to be text-only (per the built-in text-only registry or the provider's own model catalog), the proxy rewrites the request to the multimodal fallback model configured in **Settings → Advanced → Multimodal**. If a fallback provider is configured, the request is routed to that provider entirely — so a text-only DeepSeek or GLM endpoint can hand image requests to a Gemini/GPT-4o-capable provider instead of failing.
+- **Composite model binding**: give a pair of models a logical name (e.g. `vision-reasoning`). When a client sends that model name, the proxy first sends the image content to the "eyes" model on its provider, gets a text description back, replaces the images with it, and forwards the result to the "brain" model on its provider for the actual reasoning. This lets a vision model describe an image and a separate text LLM reason over it.
+
+Note: eyes inference currently supports Claude Code / Claude Desktop and Codex / Grok Build request formats; Gemini eyes inference is not implemented yet.
 
 </details>
 
@@ -340,6 +359,7 @@ For detailed guides on every feature, check out the **[User Manual](docs/user-ma
 - **Prompts**: Click "Prompts" → Create presets with Markdown editor → Activate to sync to live files
 - **Skills**: Click "Skills" → Browse GitHub repos → One-click install to supported apps
 - **Sessions**: Click "Sessions" → Browse, search, and restore conversation history across supported session sources
+- **Multimodal**: Settings → Advanced → Multimodal → Enable auto-routing, set the fallback model/provider, or add a composite (eyes + brain) model binding
 
 > **Note**: On first launch, you can manually import existing CLI tool configs as the default provider.
 
@@ -441,9 +461,9 @@ Download the latest Linux build from the [Releases](../../releases) page:
 
 ### Environment Requirements
 
-- Node.js 18+
-- pnpm 8+
-- Rust 1.85+
+- Node.js 20+ (the repo pins 22.12.0 via `.node-version`)
+- pnpm 10+ (managed via corepack; `package.json` pins `pnpm@10.12.3`)
+- Rust 1.85+ (the repo pins 1.95 via `rust-toolchain.toml`)
 - Tauri CLI 2.8+
 
 ### Development Commands
